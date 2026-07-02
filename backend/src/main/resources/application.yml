@@ -1,0 +1,25 @@
+server:
+  port: ${PORT:8080}
+
+spring:
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:isravel_workhub}
+    username: ${DB_USER:richan_27}
+    password: ${DB_PASSWORD:}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+
+app:
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration-ms: ${JWT_EXPIRATION_MS:3600000}
+
+device:
+  ip: ${DEVICE_IP:192.168.1.201}
+  port: ${DEVICE_PORT:4370}
+
+supabase:
+  url: ${SUPABASE_URL}
+  service-role-key: ${SUPABASE_KEY}

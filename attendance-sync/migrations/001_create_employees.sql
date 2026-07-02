@@ -1,0 +1,10 @@
+-- 001_create_employees.sql
+CREATE TABLE IF NOT EXISTS employees (
+  id BIGINT PRIMARY KEY,
+  name VARCHAR NOT NULL,
+  hourly_rate NUMERIC DEFAULT 0.00,
+  active BOOLEAN DEFAULT TRUE,
+  last_synced TIMESTAMP WITHOUT TIME ZONE,
+  created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT now(),
+  updated_at TIMESTAMP WITHOUT TIME ZONE DEFAULT now()
+);

@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: isravel-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-isravel_workhub}
+      POSTGRES_USER: ${POSTGRES_USER:-isravel}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-isravel_password}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./attendance-sync/migrations:/docker-entrypoint-initdb.d
+    networks:
+      - isravel-network
+    restart: unless-stopped
+
+  # Spring Boot Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: isravel-backend
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-isravel_workhub}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-isravel}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-isravel_password}
+      APP_JWT_SECRET: ${APP_JWT_SECRET:-isravel_jwt_secret_key_change_in_production}
+      APP_JWT_EXPIRATION_MS: ${APP_JWT_EXPIRATION_MS:-86400000}
+      DEVICE_IP: ${DEVICE_IP:-192.168.1.100}
+      DEVICE_PORT: ${DEVICE_PORT:-4370}
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+    networks:
+      - isravel-network
+    restart: unless-stopped
+
+  # React Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: isravel-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - isravel-network
+    restart: unless-stopped
+
+  # Attendance Sync Service (Python)
+  attendance-sync:
+    build:
+      context: ./attendance-sync
+      dockerfile: Dockerfile
+    container_name: isravel-attendance-sync
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-isravel}:${POSTGRES_PASSWORD:-isravel_password}@postgres:5432/${POSTGRES_DB:-isravel_workhub}
+      DEVICE_IP: ${DEVICE_IP:-192.168.1.100}
+      DEVICE_PORT: ${DEVICE_PORT:-4370}
+      SYNC_INTERVAL_MINUTES: ${SYNC_INTERVAL_MINUTES:-5}
+    depends_on:
+      - postgres
+    networks:
+      - isravel-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  isravel-network:
+    driver: bridge

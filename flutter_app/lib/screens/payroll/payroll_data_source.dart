@@ -7,15 +7,24 @@ import '../../theme/app_theme.dart';
 
 class PayrollDataSource extends DataGridSource {
   PayrollDataSource({required List<PayrollRecord> records}) {
-    final currencyFormat = NumberFormat.currency(symbol: '\$');
+    final currencyFormat = NumberFormat.currency(symbol: '₹');
+    final hoursFormat = NumberFormat('0.00');
 
     _recordData = records
         .map<DataGridRow>((e) => DataGridRow(cells: [
               DataGridCell<int>(columnName: 'employeeId', value: e.employeeId),
-              DataGridCell<double>(
-                  columnName: 'regularHours', value: e.regularHours),
-              DataGridCell<double>(
-                  columnName: 'overtimeHours', value: e.overtimeHours),
+              DataGridCell<String>(
+                  columnName: 'paidHours',
+                  value: '${hoursFormat.format(e.paidHours)}h'),
+              DataGridCell<String>(
+                  columnName: 'regularHours',
+                  value: '${hoursFormat.format(e.regularHours)}h'),
+              DataGridCell<String>(
+                  columnName: 'overtimeHours',
+                  value: '${hoursFormat.format(e.overtimeHours)}h'),
+              DataGridCell<String>(
+                  columnName: 'breakHours',
+                  value: '${hoursFormat.format(e.breakHours)}h'),
               DataGridCell<String>(
                   columnName: 'grossPay',
                   value: currencyFormat.format(e.grossPay)),
@@ -35,6 +44,7 @@ class PayrollDataSource extends DataGridSource {
   DataGridRowAdapter buildRow(DataGridRow row) {
     final index = rows.indexOf(row);
     final alternate = index.isEven;
+    final bg = alternate ? Colors.white : const Color(0xFFFBF7EF);
 
     return DataGridRowAdapter(
       cells: row.getCells().map<Widget>((e) {
@@ -42,36 +52,37 @@ class PayrollDataSource extends DataGridSource {
           final isPaid = e.value == 'PAID';
           return Container(
             alignment: Alignment.center,
-            color: alternate ? Colors.white : const Color(0xFFFBF7EF),
+            color: bg,
             padding: const EdgeInsets.all(12),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color:
-                    (isPaid ? AppTheme.primaryGreen : const Color(0xFFBF8A2A))
-                        .withValues(alpha: 0.12),
+                color: (isPaid ? AppTheme.primaryGreen : const Color(0xFFBF8A2A))
+                    .withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(999),
               ),
               child: Text(
                 e.value.toString(),
                 style: TextStyle(
-                  color:
-                      isPaid ? AppTheme.primaryGreen : const Color(0xFFBF8A2A),
+                  color: isPaid ? AppTheme.primaryGreen : const Color(0xFFBF8A2A),
                   fontWeight: FontWeight.w700,
+                  fontSize: 12,
                 ),
               ),
             ),
           );
         }
+        // Highlight paid hours column slightly
+        final isPaidHours = e.columnName == 'paidHours';
         return Container(
           alignment: Alignment.centerLeft,
-          color: alternate ? Colors.white : const Color(0xFFFBF7EF),
+          color: bg,
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
           child: Text(
             e.value.toString(),
-            style: const TextStyle(
-              color: AppTheme.ink,
-              fontWeight: FontWeight.w500,
+            style: TextStyle(
+              color: isPaidHours ? AppTheme.primaryGreen : AppTheme.ink,
+              fontWeight: isPaidHours ? FontWeight.w700 : FontWeight.w500,
             ),
           ),
         );

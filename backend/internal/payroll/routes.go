@@ -5,11 +5,18 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// RegisterRoutes registers all monthly payroll processing endpoints under /api/payroll.
+// RegisterRoutes registers all payroll endpoints under /api/payroll.
 func RegisterRoutes(rg *gin.RouterGroup, h *Handler, authSvc auth.Service) {
 	payrollGroup := rg.Group("/payroll")
 	payrollGroup.Use(auth.RequireRole(authSvc, "ADMIN", "MANAGER"))
 	{
+		// Period-based endpoints (new)
+		payrollGroup.POST("/generate", h.GeneratePayroll)
+		payrollGroup.GET("/preview/:payPeriodId", h.PreviewPayroll)
+		payrollGroup.GET("/period/:payPeriodId", h.GetPayrollByPeriod)
+		payrollGroup.PUT("/mark-paid/:employeeId/:payPeriodId", h.MarkPayrollPaid)
+
+		// Month-based endpoints (kept for backward compat)
 		payrollGroup.POST("/calculate/:employeeId/:month/:year", h.CalculatePayroll)
 		payrollGroup.POST("/calculate-all/:month/:year", h.CalculateAllPayroll)
 		payrollGroup.GET("/employee/:employeeId/:month/:year", h.GetEmployeePayroll)

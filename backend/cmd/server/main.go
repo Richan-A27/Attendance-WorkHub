@@ -14,6 +14,7 @@ import (
 	"com.isravel.workhub/internal/intelligence"
 	"com.isravel.workhub/internal/middleware"
 	"com.isravel.workhub/internal/operations"
+	"com.isravel.workhub/internal/payperiod"
 	"com.isravel.workhub/internal/payroll"
 	"com.isravel.workhub/internal/reports"
 	"com.isravel.workhub/internal/schedule"
@@ -89,8 +90,12 @@ func main() {
 	rankingSvc := intelligence.NewRankingService(scoreEngine, empRepo)
 	intelHandler := intelligence.NewHandler(sessionEngine, dailyProcessor, scoreEngine, rankingSvc, intelRepo)
 
+	payPeriodRepo := payperiod.NewRepository(db)
+	payPeriodSvc := payperiod.NewService(payPeriodRepo)
+	payPeriodHandler := payperiod.NewHandler(payPeriodSvc)
+
 	payrollRepo := payroll.NewRepository(db)
-	payrollSvc := payroll.NewService(payrollRepo, empRepo, intelRepo)
+	payrollSvc := payroll.NewService(payrollRepo, empRepo, intelRepo, payPeriodRepo)
 	payrollHandler := payroll.NewHandler(payrollSvc, payrollRepo)
 
 	reportsSvc := reports.NewService(empRepo, intelRepo, payrollRepo, rankingSvc)
@@ -123,6 +128,7 @@ func main() {
 	schedule.RegisterRoutes(apiGroup, scheduleHandler, authSvc)
 	attendance.RegisterRoutes(apiGroup, attendanceHandler, authSvc)
 	intelligence.RegisterRoutes(apiGroup, intelHandler, authSvc)
+	payperiod.RegisterRoutes(apiGroup, payPeriodHandler, authSvc)
 	payroll.RegisterRoutes(apiGroup, payrollHandler, authSvc)
 	reports.RegisterRoutes(apiGroup, reportsHandler, authSvc)
 	dashboard.RegisterRoutes(apiGroup, dashboardHandler, authSvc)

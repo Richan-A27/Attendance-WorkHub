@@ -1,21 +1,31 @@
-# Backend Dockerfile
-FROM maven:3.8-openjdk-17 AS builder
+# Build Stage
+FROM golang:1.24-alpine AS builder
 
 WORKDIR /app
 
-COPY pom.xml .
-RUN mvn dependency:go-offline
+# Copy dependency manifests
+COPY go.mod go.sum ./
+RUN go mod download
 
-COPY src ./src
-RUN mvn clean package -DskipTests
+# Copy source code
+COPY cmd ./cmd
+COPY internal ./internal
 
-# Production stage
-FROM openjdk:17-jdk-slim
+# Build clean optimized binary
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o server ./cmd/server
+
+# Production Stage
+FROM alpine:latest
+
+RUN apk --no-cache add ca-certificates tzdata
 
 WORKDIR /app
 
-COPY --from=builder /app/target/*.jar app.jar
+# Copy compiled binary from builder stage
+COPY --from=builder /app/server .
 
+# Expose server port
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Execute server
+ENTRYPOINT ["./server"]

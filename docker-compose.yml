@@ -25,13 +25,18 @@ services:
       dockerfile: Dockerfile
     container_name: isravel-backend
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-isravel_workhub}
-      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-isravel}
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-isravel_password}
-      APP_JWT_SECRET: ${APP_JWT_SECRET:-isravel_jwt_secret_key_change_in_production}
-      APP_JWT_EXPIRATION_MS: ${APP_JWT_EXPIRATION_MS:-86400000}
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: ${POSTGRES_DB:-isravel_workhub}
+      DB_USER: ${POSTGRES_USER:-isravel}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-isravel_password}
+      PORT: "8080"
+      JWT_SECRET: ${APP_JWT_SECRET:-isravel_jwt_secret_key_change_in_production}
+      JWT_EXPIRATION_MS: ${APP_JWT_EXPIRATION_MS:-86400000}
       DEVICE_IP: ${DEVICE_IP:-192.168.1.100}
       DEVICE_PORT: ${DEVICE_PORT:-4370}
+      SUPABASE_URL: ${SUPABASE_URL:-}
+      SUPABASE_KEY: ${SUPABASE_KEY:-}
     ports:
       - "8080:8080"
     depends_on:

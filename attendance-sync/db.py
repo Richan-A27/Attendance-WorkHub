@@ -123,3 +123,56 @@ class DB:
 
             skipped = len(rows) - inserted
             return inserted, skipped
+
+    def write_sync_report(self, start_time, end_time, status: str, 
+                          users_synced: int, attendance_synced: int, duplicates_ignored: int, 
+                          error_message = None, history_id = None):
+        duration = (end_time - start_time).total_seconds()
+        
+        with self.conn.cursor() as cur:
+            # 1. Update or Insert into sync_history
+            if history_id is not None:
+                history_sql = """
+                UPDATE sync_history 
+                SET sync_start_time = %s, sync_end_time = %s, status = %s, records_processed = %s, error_message = %s
+                WHERE id = %s;
+                """
+                cur.execute(history_sql, (start_time, end_time, status, attendance_synced, error_message, history_id))
+            else:
+                history_sql = """
+                INSERT INTO sync_history (sync_start_time, sync_end_time, status, records_processed, error_message, created_at)
+                VALUES (%s, %s, %s, %s, %s, now())
+                """
+                cur.execute(history_sql, (start_time, end_time, status, attendance_synced, error_message))
+            
+            # 2. Upsert into device_sync_status (id=1)
+            device_ip = config.DEVICE_IP
+            device_port = config.DEVICE_PORT
+            
+            status_sql = """
+            INSERT INTO device_sync_status (id, device_name, device_ip, device_port, status, 
+                                          users_synced, attendance_synced, duplicates_ignored, 
+                                          sync_duration, last_sync, last_employee_sync, 
+                                          last_attendance_sync, last_error)
+            VALUES (1, 'X2008', %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (id) DO UPDATE SET
+                status = EXCLUDED.status,
+                users_synced = EXCLUDED.users_synced,
+                attendance_synced = EXCLUDED.attendance_synced,
+                duplicates_ignored = EXCLUDED.duplicates_ignored,
+                sync_duration = EXCLUDED.sync_duration,
+                last_sync = EXCLUDED.last_sync,
+                last_employee_sync = COALESCE(EXCLUDED.last_employee_sync, device_sync_status.last_employee_sync),
+                last_attendance_sync = COALESCE(EXCLUDED.last_attendance_sync, device_sync_status.last_attendance_sync),
+                last_error = EXCLUDED.last_error;
+            """
+            
+            last_employee_sync = end_time if users_synced > 0 else None
+            last_attendance_sync = end_time if attendance_synced > 0 else None
+            
+            cur.execute(status_sql, (
+                device_ip, device_port, 'Online' if status == 'SUCCESS' else 'Offline',
+                users_synced, attendance_synced, duplicates_ignored,
+                duration, end_time, last_employee_sync, last_attendance_sync, error_message
+            ))
+

@@ -38,9 +38,30 @@ public class SyncHistoryController {
     @PostMapping("/manual-sync")
     @RequireRole("ADMIN")
     public ResponseEntity<Map<String, Object>> triggerManualSync() {
-        // This would trigger the Python sync service
-        // For now, we'll create a sync history entry
         SyncHistoryEntity syncHistory = syncHistoryService.startSync();
+        
+        final Long historyId = syncHistory.getId();
+        new Thread(() -> {
+            try {
+                ProcessBuilder pb = new ProcessBuilder(
+                    "/Users/richan_27/Desktop/Isravel-WorkHub/attendance-sync/.venv/bin/python",
+                    "/Users/richan_27/Desktop/Isravel-WorkHub/attendance-sync/attendance_sync.py",
+                    "--once",
+                    "--history-id",
+                    String.valueOf(historyId)
+                );
+                pb.directory(new java.io.File("/Users/richan_27/Desktop/Isravel-WorkHub/attendance-sync"));
+                pb.environment().putAll(System.getenv());
+                
+                Process p = pb.start();
+                int exitCode = p.waitFor();
+                if (exitCode != 0) {
+                    System.err.println("Manual sync python process failed with exit code: " + exitCode);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }).start();
         
         Map<String, Object> response = new java.util.HashMap<>();
         response.put("message", "Manual sync triggered");

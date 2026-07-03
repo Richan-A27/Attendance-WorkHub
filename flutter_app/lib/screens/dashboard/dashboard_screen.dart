@@ -66,112 +66,7 @@ class _DashboardBody extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AppSurfaceCard(
-            gradient: const LinearGradient(
-              colors: [AppTheme.darkGreenSidebar, Color(0xFF204531)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Wrap(
-                  alignment: WrapAlignment.spaceBetween,
-                  runSpacing: 18,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const AppStatusBadge(
-                          label: 'Workforce intelligence',
-                          color: AppTheme.accentGold,
-                          icon: Icons.auto_graph_rounded,
-                        ),
-                        const SizedBox(height: 18),
-                        Text(
-                          'Good morning, Administrator',
-                          style: Theme.of(context)
-                              .textTheme
-                              .headlineMedium
-                              ?.copyWith(
-                                color: Colors.white,
-                                fontSize: ResponsiveLayout.isMobile(context)
-                                    ? 24
-                                    : (compactHero ? 30 : 38),
-                              ),
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          'ISRAVEL WorkHub gives your team a clear view of attendance, payroll readiness, and device health.',
-                          style: TextStyle(
-                            color: const Color(0xFFD1E1D7),
-                            fontSize: compactHero ? 14 : 16,
-                            height: 1.55,
-                          ),
-                        ),
-                      ],
-                    ),
-                    AppSurfaceCard(
-                      color: Colors.white.withValues(alpha: 0.08),
-                      padding: EdgeInsets.all(compactHero ? 14 : 18),
-                      child: const Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Today\'s overview',
-                            style: TextStyle(
-                              color: Color(0xFFD1E1D7),
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          SizedBox(height: 12),
-                          Text(
-                            'Operations stable',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          SizedBox(height: 10),
-                          Text(
-                            'Review attendance drift, payroll exposure, and sync confidence from one surface.',
-                            style: TextStyle(
-                              color: Color(0xFFD1E1D7),
-                              height: 1.5,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: [
-                    AppStatusBadge(
-                      label: '${checkedIn.toString()} checked in',
-                      color: const Color(0xFF9BE3AC),
-                      icon: Icons.login_rounded,
-                    ),
-                    AppStatusBadge(
-                      label: '${late.toString()} late flags',
-                      color: const Color(0xFFF0BE63),
-                      icon: Icons.schedule_rounded,
-                    ),
-                    AppStatusBadge(
-                      label: '${absent.toString()} absent records',
-                      color: const Color(0xFFE88A7B),
-                      icon: Icons.person_off_rounded,
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 28),
+
           GridView.count(
             crossAxisCount: ResponsiveLayout.adaptiveColumns(
               context,
@@ -184,8 +79,8 @@ class _DashboardBody extends StatelessWidget {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             childAspectRatio: ResponsiveLayout.isMobile(context)
-                ? 1.1
-                : (ResponsiveLayout.isTablet(context) ? 0.98 : 0.9),
+                ? 1.6
+                : (ResponsiveLayout.isTablet(context) ? 1.4 : 1.2),
             children: [
               AppMetricCard(
                 title: 'Present',
@@ -226,27 +121,36 @@ class _DashboardBody extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 28),
-          GridView.count(
-            crossAxisCount: ResponsiveLayout.adaptiveColumns(
-              context,
-              mobile: 1,
-              tablet: 1,
-              desktop: 2,
-            ),
-            crossAxisSpacing: 18,
-            mainAxisSpacing: 18,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            childAspectRatio: ResponsiveLayout.isDesktop(context) ? 1.08 : 0.88,
-            children: [
-              _AttendanceCompositionCard(
-                present: checkedIn,
-                absent: absent,
-                late: late,
-              ),
-              _WeeklyPerformanceCard(weeklyBars: weeklyBars),
-            ],
-          ),
+          ResponsiveLayout.isDesktop(context)
+              ? IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(
+                        child: _AttendanceCompositionCard(
+                          present: checkedIn,
+                          absent: absent,
+                          late: late,
+                        ),
+                      ),
+                      const SizedBox(width: 18),
+                      Expanded(
+                        child: _WeeklyPerformanceCard(weeklyBars: weeklyBars),
+                      ),
+                    ],
+                  ),
+                )
+              : Column(
+                  children: [
+                    _AttendanceCompositionCard(
+                      present: checkedIn,
+                      absent: absent,
+                      late: late,
+                    ),
+                    const SizedBox(height: 18),
+                    _WeeklyPerformanceCard(weeklyBars: weeklyBars),
+                  ],
+                ),
           const SizedBox(height: 28),
           const _DeviceHealthCard(),
         ],
@@ -280,63 +184,121 @@ class _DeviceHealthCard extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Wrap(
-                alignment: WrapAlignment.spaceBetween,
-                runSpacing: 14,
-                children: [
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 56,
-                        height: 56,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: accent.withValues(alpha: 0.18),
+              ResponsiveLayout.isMobile(context)
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              width: 56,
+                              height: 56,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: accent.withValues(alpha: 0.18),
+                              ),
+                              child: Icon(
+                                Icons.router_rounded,
+                                color: accent,
+                                size: 28,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '${status["deviceName"] ?? "Attendance"} scanner',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleLarge
+                                        ?.copyWith(
+                                          color: Colors.white,
+                                        ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  AppStatusBadge(
+                                    label: isOnline ? 'Online' : 'Offline',
+                                    color: accent,
+                                    icon: isOnline
+                                        ? Icons.check_circle_rounded
+                                        : Icons.error_outline_rounded,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
-                        child: Icon(
-                          Icons.router_rounded,
-                          color: accent,
-                          size: 28,
+                        const SizedBox(height: 16),
+                        OutlinedButton.icon(
+                          onPressed: () => ref.invalidate(deviceStatusProvider),
+                          icon: const Icon(Icons.refresh_rounded),
+                          label: const Text('Refresh device'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            side: const BorderSide(color: Color(0x2BFFFFFF)),
+                            backgroundColor: Colors.white.withValues(alpha: 0.04),
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 16),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '${status['deviceName'] ?? 'Attendance'} scanner',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleLarge
-                                ?.copyWith(
-                                  color: Colors.white,
+                      ],
+                    )
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 56,
+                              height: 56,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: accent.withValues(alpha: 0.18),
+                              ),
+                              child: Icon(
+                                Icons.router_rounded,
+                                color: accent,
+                                size: 28,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '${status["deviceName"] ?? "Attendance"} scanner',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleLarge
+                                      ?.copyWith(
+                                        color: Colors.white,
+                                      ),
                                 ),
+                                const SizedBox(height: 6),
+                                AppStatusBadge(
+                                  label: isOnline ? 'Online' : 'Offline',
+                                  color: accent,
+                                  icon: isOnline
+                                      ? Icons.check_circle_rounded
+                                      : Icons.error_outline_rounded,
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        OutlinedButton.icon(
+                          onPressed: () => ref.invalidate(deviceStatusProvider),
+                          icon: const Icon(Icons.refresh_rounded),
+                          label: const Text('Refresh device'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            side: const BorderSide(color: Color(0x2BFFFFFF)),
+                            backgroundColor: Colors.white.withValues(alpha: 0.04),
                           ),
-                          const SizedBox(height: 6),
-                          AppStatusBadge(
-                            label: isOnline ? 'Online' : 'Offline',
-                            color: accent,
-                            icon: isOnline
-                                ? Icons.check_circle_rounded
-                                : Icons.error_outline_rounded,
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  OutlinedButton.icon(
-                    onPressed: () => ref.invalidate(deviceStatusProvider),
-                    icon: const Icon(Icons.refresh_rounded),
-                    label: const Text('Refresh device'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      side: const BorderSide(color: Color(0x2BFFFFFF)),
-                      backgroundColor: Colors.white.withValues(alpha: 0.04),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
               const SizedBox(height: 22),
               GridView.count(
                 crossAxisCount: ResponsiveLayout.adaptiveColumns(
@@ -349,7 +311,8 @@ class _DeviceHealthCard extends ConsumerWidget {
                 mainAxisSpacing: 12,
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                childAspectRatio: 1.45,
+                childAspectRatio:
+                    ResponsiveLayout.isDesktop(context) ? 1.2 : 1.05,
                 children: [
                   _DeviceStatTile(
                     label: 'Users synced',
@@ -399,11 +362,12 @@ class _DeviceStatTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isLong = value.length > 8;
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(20),
+        color: Colors.white.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
       ),
       child: Column(
@@ -411,19 +375,22 @@ class _DeviceStatTile extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
-            label,
+            label.toUpperCase(),
             style: const TextStyle(
-              color: Color(0xFFD1E1D7),
-              fontSize: 12,
+              color: Color(0xB3FFFFFF),
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.8,
             ),
           ),
           const SizedBox(height: 10),
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               color: Colors.white,
-              fontWeight: FontWeight.w700,
-              height: 1.25,
+              fontSize: isLong ? 13 : 22,
+              fontWeight: FontWeight.w800,
+              height: 1.1,
             ),
           ),
         ],
@@ -535,7 +502,7 @@ class _WeeklyPerformanceCard extends StatelessWidget {
             height: chartHeight,
             child: BarChart(
               BarChartData(
-                alignment: BarChartAlignment.spaceBetween,
+                alignment: BarChartAlignment.spaceAround,
                 maxY:
                     (weeklyBars.reduce((a, b) => a > b ? a : b) + 4).toDouble(),
                 minY: 0,
@@ -560,6 +527,7 @@ class _WeeklyPerformanceCard extends StatelessWidget {
                   bottomTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
+                      reservedSize: 32,
                       getTitlesWidget: (value, meta) {
                         const days = [
                           'Mon',
@@ -640,7 +608,7 @@ class _DashboardLoadingState extends StatelessWidget {
             mainAxisSpacing: 18,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            childAspectRatio: ResponsiveLayout.isMobile(context) ? 1.35 : 1.05,
+            childAspectRatio: ResponsiveLayout.isMobile(context) ? 1.18 : 0.92,
             children: const [
               AppSkeletonCard(),
               AppSkeletonCard(),
@@ -660,7 +628,7 @@ class _DashboardLoadingState extends StatelessWidget {
             mainAxisSpacing: 18,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            childAspectRatio: ResponsiveLayout.isDesktop(context) ? 1.38 : 1.05,
+            childAspectRatio: ResponsiveLayout.isDesktop(context) ? 1.12 : 0.92,
             children: const [
               AppSkeletonCard(height: 280),
               AppSkeletonCard(height: 280),

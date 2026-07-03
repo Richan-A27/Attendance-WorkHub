@@ -36,4 +36,24 @@ class EmployeeRepository {
       throw Exception('Failed to load employees: $e');
     }
   }
+
+  Future<void> updateHourlyRate(int id, double rate) async {
+    try {
+      final response = await _dio.patch(
+        '/employees/$id/hourly-rate',
+        data: rate,
+        options: Options(contentType: 'application/json'),
+      );
+      final apiResponse = ApiResponse<dynamic>.fromJson(
+        response.data,
+        (data) => data,
+      );
+
+      if (!apiResponse.success) {
+        throw Exception(apiResponse.message);
+      }
+    } catch (e) {
+      throw Exception('Failed to update hourly rate: $e');
+    }
+  }
 }

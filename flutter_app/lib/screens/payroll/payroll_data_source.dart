@@ -64,10 +64,7 @@ class PayrollDataSource extends DataGridSource {
           );
         }
         return Container(
-          alignment: ['grossPay', 'netPay', 'regularHours', 'overtimeHours']
-                  .contains(e.columnName)
-              ? Alignment.centerRight
-              : Alignment.centerLeft,
+          alignment: Alignment.centerLeft,
           color: alternate ? Colors.white : const Color(0xFFFBF7EF),
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
           child: Text(

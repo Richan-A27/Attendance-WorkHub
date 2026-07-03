@@ -62,16 +62,16 @@ class _DiagnosticsBody extends StatelessWidget {
         children: [
           AppPageHeader(
             eyebrow: 'Monitoring',
-            title: 'System health command center',
+            title: 'System health',
             subtitle:
-                'Keep an eye on biometric connectivity, database reachability, and sync reliability from one polished monitoring surface.',
+                'Track device, database, and sync readiness without the clutter.',
             trailing: OutlinedButton.icon(
               onPressed: () => ref.invalidate(diagnosticsProvider),
               icon: const Icon(Icons.refresh_rounded),
-              label: const Text('Refresh health'),
+              label: const Text('Refresh'),
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           AppSurfaceCard(
             gradient: LinearGradient(
               colors: [
@@ -83,107 +83,88 @@ class _DiagnosticsBody extends StatelessWidget {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
+            padding: const EdgeInsets.all(18),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Wrap(
-                  alignment: WrapAlignment.spaceBetween,
-                  runSpacing: 18,
-                  children: [
-                    Column(
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final stacked = constraints.maxWidth < 900;
+
+                    return Flex(
+                      direction: stacked ? Axis.vertical : Axis.horizontal,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        AppStatusBadge(
-                          label: deviceOnline
-                              ? 'Scanner online'
-                              : 'Scanner offline',
-                          color: deviceOnline
-                              ? const Color(0xFF9BE3AC)
-                              : const Color(0xFFE88A7B),
-                          icon: deviceOnline
-                              ? Icons.check_circle_rounded
-                              : Icons.error_outline_rounded,
+                        if (stacked)
+                          _SystemHeroCopy(deviceOnline: deviceOnline)
+                        else
+                          Expanded(
+                            child: _SystemHeroCopy(deviceOnline: deviceOnline),
+                          ),
+                        SizedBox(
+                          width: stacked ? 0 : 16,
+                          height: stacked ? 14 : 0,
                         ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'ISRAVEL sync environment',
-                          style: Theme.of(context)
-                              .textTheme
-                              .headlineSmall
-                              ?.copyWith(
-                                color: Colors.white,
-                              ),
-                        ),
-                        const SizedBox(height: 10),
-                        const Text(
-                          'Track infrastructure confidence before it affects attendance or payroll operations.',
-                          style: TextStyle(
-                            color: Color(0xFFD1E1D7),
-                            fontSize: 15,
-                            height: 1.5,
+                        ElevatedButton.icon(
+                          onPressed: () async {
+                            try {
+                              await ref
+                                  .read(deviceStatusRepositoryProvider)
+                                  .triggerManualSync();
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Manual sync triggered'),
+                                  ),
+                                );
+                                ref.invalidate(diagnosticsProvider);
+                              }
+                            } catch (e) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Sync failed: $e')),
+                                );
+                              }
+                            }
+                          },
+                          icon: const Icon(Icons.sync_rounded),
+                          label: const Text('Manual sync'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: AppTheme.darkGreenSidebar,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 18,
+                              vertical: 14,
+                            ),
                           ),
                         ),
                       ],
-                    ),
-                    ElevatedButton.icon(
-                      onPressed: () async {
-                        try {
-                          await ref
-                              .read(deviceStatusRepositoryProvider)
-                              .triggerManualSync();
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Manual sync triggered'),
-                              ),
-                            );
-                            ref.invalidate(diagnosticsProvider);
-                          }
-                        } catch (e) {
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Sync failed: $e')),
-                            );
-                          }
-                        }
-                      },
-                      icon: const Icon(Icons.sync_rounded),
-                      label: const Text('Trigger manual sync'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: AppTheme.darkGreenSidebar,
-                      ),
-                    ),
-                  ],
+                    );
+                  },
                 ),
-                const SizedBox(height: 22),
+                const SizedBox(height: 16),
                 GridView.count(
-                  crossAxisCount: ResponsiveLayout.adaptiveColumns(
-                    context,
-                    mobile: 1,
-                    tablet: 2,
-                    desktop: 4,
-                  ),
+                  crossAxisCount: ResponsiveLayout.isMobile(context) ? 2 : 4,
                   crossAxisSpacing: 12,
                   mainAxisSpacing: 12,
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  childAspectRatio: 1.45,
+                  childAspectRatio: 2.2,
                   children: [
                     _MonitorMetric(
-                      label: 'Last sync status',
+                      label: 'Sync status',
                       value: lastSyncStatus,
                     ),
                     _MonitorMetric(
-                      label: 'Last sync duration',
+                      label: 'Sync duration',
                       value: lastSyncDuration,
                     ),
                     _MonitorMetric(
-                      label: 'Recent failures',
+                      label: 'Failures',
                       value: recentFailures,
                     ),
                     _MonitorMetric(
-                      label: 'Connection status',
+                      label: 'Connection',
                       value: deviceStatus['connectionStatus']?.toString() ??
                           'UNKNOWN',
                     ),
@@ -192,19 +173,11 @@ class _DiagnosticsBody extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 24),
-          GridView.count(
-            crossAxisCount: ResponsiveLayout.adaptiveColumns(
-              context,
-              mobile: 1,
-              tablet: 2,
-              desktop: 2,
-            ),
-            crossAxisSpacing: 18,
-            mainAxisSpacing: 18,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            childAspectRatio: ResponsiveLayout.isDesktop(context) ? 1.38 : 1.05,
+          const SizedBox(height: 18),
+          _ResponsiveWrap(
+            minItemWidth: 360,
+            spacing: 16,
+            runSpacing: 16,
             children: [
               _ServiceStatusCard(
                 deviceOnline: deviceOnline,
@@ -237,10 +210,11 @@ class _MonitorMetric extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      constraints: const BoxConstraints(minHeight: 78),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.07),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
       ),
       child: Column(
@@ -251,19 +225,66 @@ class _MonitorMetric extends StatelessWidget {
             label,
             style: const TextStyle(
               color: Color(0xFFD1E1D7),
-              fontSize: 12,
+              fontSize: 11.5,
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 6),
           Text(
             value,
             style: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.w700,
+              fontSize: 14.5,
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ResponsiveWrap extends StatelessWidget {
+  final List<Widget> children;
+  final double minItemWidth;
+  final double spacing;
+  final double runSpacing;
+
+  const _ResponsiveWrap({
+    required this.children,
+    required this.minItemWidth,
+    this.spacing = 16,
+    this.runSpacing = 16,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final availableWidth = constraints.maxWidth;
+        final columns = (availableWidth / minItemWidth).floor().clamp(1, 4);
+        final resolvedColumns = columns > 1 &&
+                availableWidth <
+                    (minItemWidth * columns) + (spacing * (columns - 1))
+            ? columns - 1
+            : columns;
+        final itemWidth = resolvedColumns == 1
+            ? availableWidth
+            : (availableWidth - (spacing * (resolvedColumns - 1))) /
+                resolvedColumns;
+
+        return Wrap(
+          spacing: spacing,
+          runSpacing: runSpacing,
+          children: children
+              .map(
+                (child) => SizedBox(
+                  width: itemWidth,
+                  child: child,
+                ),
+              )
+              .toList(),
+        );
+      },
     );
   }
 }
@@ -287,10 +308,9 @@ class _ServiceStatusCard extends StatelessWidget {
         children: [
           const AppSectionHeader(
             title: 'Service status',
-            subtitle:
-                'At-a-glance operational health across core dependencies.',
+            subtitle: 'Core services and their current availability.',
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           _ServiceTile(
             title: 'eSSL X2008 Biometric',
             status: deviceOnline ? 'ONLINE' : 'OFFLINE',
@@ -351,25 +371,39 @@ class _DiagnosticsCard extends StatelessWidget {
         children: [
           const AppSectionHeader(
             title: 'Diagnostics',
-            subtitle:
-                'Important values currently exposed by the diagnostics payload.',
+            subtitle: 'Current values exposed by the diagnostics payload.',
           ),
-          const SizedBox(height: 24),
-          AppKeyValueRow(
-            label: 'Device IP',
-            value: deviceStatus['deviceIp']?.toString() ?? '192.168.1.201',
+          const SizedBox(height: 16),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _DiagnosticChip(
+                label: 'Device IP',
+                value: deviceStatus['deviceIp']?.toString() ?? '192.168.1.201',
+              ),
+              const SizedBox(height: 12),
+              _DiagnosticChip(
+                label: 'Connection',
+                value:
+                    deviceStatus['connectionStatus']?.toString() ?? 'UNKNOWN',
+              ),
+              const SizedBox(height: 12),
+              _DiagnosticChip(
+                label: 'Sync status',
+                value: lastSyncStatus,
+              ),
+              const SizedBox(height: 12),
+              _DiagnosticChip(
+                label: 'Sync duration',
+                value: lastSyncDuration,
+              ),
+              const SizedBox(height: 12),
+              _DiagnosticChip(
+                label: 'Failures',
+                value: recentFailures,
+              ),
+            ],
           ),
-          const Divider(),
-          AppKeyValueRow(
-            label: 'Connection status',
-            value: deviceStatus['connectionStatus']?.toString() ?? 'UNKNOWN',
-          ),
-          const Divider(),
-          AppKeyValueRow(label: 'Last sync status', value: lastSyncStatus),
-          const Divider(),
-          AppKeyValueRow(label: 'Last sync duration', value: lastSyncDuration),
-          const Divider(),
-          AppKeyValueRow(label: 'Recent failures', value: recentFailures),
         ],
       ),
     );
@@ -392,19 +426,19 @@ class _ServiceTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: const Color(0xFFF8F3E8),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(18),
       ),
       child: Row(
         children: [
           Container(
-            width: 46,
-            height: 46,
+            width: 42,
+            height: 42,
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(icon, color: color),
           ),
@@ -428,6 +462,90 @@ class _ServiceTile extends StatelessWidget {
               color: color,
               shape: BoxShape.circle,
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SystemHeroCopy extends StatelessWidget {
+  final bool deviceOnline;
+
+  const _SystemHeroCopy({
+    required this.deviceOnline,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        AppStatusBadge(
+          label: deviceOnline ? 'Scanner online' : 'Scanner offline',
+          color:
+              deviceOnline ? const Color(0xFF9BE3AC) : const Color(0xFFE88A7B),
+          icon: deviceOnline
+              ? Icons.check_circle_rounded
+              : Icons.error_outline_rounded,
+        ),
+        const SizedBox(height: 12),
+        Text(
+          'Sync environment',
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                color: Colors.white,
+                fontSize: 24,
+              ),
+        ),
+        const SizedBox(height: 6),
+        const Text(
+          'The core device and sync pipeline are ready for review.',
+          style: TextStyle(
+            color: Color(0xFFD1E1D7),
+            fontSize: 14,
+            height: 1.4,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _DiagnosticChip extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _DiagnosticChip({
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: BoxConstraints(
+        minWidth: ResponsiveLayout.isMobile(context) ? 0 : 170,
+      ),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8F3E8),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontSize: 12.5,
+                ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
           ),
         ],
       ),

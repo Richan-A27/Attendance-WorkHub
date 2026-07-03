@@ -20,7 +20,6 @@ class EmployeeListScreen extends ConsumerStatefulWidget {
 
 class _EmployeeListScreenState extends ConsumerState<EmployeeListScreen> {
   final _searchController = TextEditingController();
-  String _statusFilter = 'All';
 
   @override
   void dispose() {
@@ -41,10 +40,7 @@ class _EmployeeListScreenState extends ConsumerState<EmployeeListScreen> {
               final matchesQuery = query.isEmpty ||
                   employee.name.toLowerCase().contains(query) ||
                   employee.id.toString().contains(query);
-              final matchesStatus = _statusFilter == 'All' ||
-                  (_statusFilter == 'Active' && employee.active) ||
-                  (_statusFilter == 'Inactive' && !employee.active);
-              return matchesQuery && matchesStatus;
+              return matchesQuery;
             }).toList();
 
             final activeCount =
@@ -78,58 +74,6 @@ class _EmployeeListScreenState extends ConsumerState<EmployeeListScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  GridView.count(
-                    crossAxisCount: ResponsiveLayout.adaptiveColumns(
-                      context,
-                      mobile: 1,
-                      tablet: 2,
-                      desktop: 3,
-                    ),
-                    crossAxisSpacing: 18,
-                    mainAxisSpacing: 18,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    childAspectRatio: ResponsiveLayout.isMobile(context)
-                        ? 1.12
-                        : (ResponsiveLayout.isTablet(context) ? 1.0 : 0.94),
-                    children: [
-                      AppMetricCard(
-                        title: 'Total employees',
-                        value: '${employees.length}',
-                        caption:
-                            'Registered workforce records from device sync',
-                        icon: Icons.groups_rounded,
-                        accentColor: AppTheme.primaryGreen,
-                        progress: employees.isEmpty ? 0 : 1,
-                        trend: 'Live',
-                      ),
-                      AppMetricCard(
-                        title: 'Active profiles',
-                        value: '$activeCount',
-                        caption: 'Employees currently active in the system',
-                        icon: Icons.check_circle_outline_rounded,
-                        accentColor: const Color(0xFF2F7A52),
-                        progress: employees.isEmpty
-                            ? 0
-                            : activeCount / employees.length,
-                        trend:
-                            '${employees.isEmpty ? 0 : ((activeCount / employees.length) * 100).round()}%',
-                      ),
-                      AppMetricCard(
-                        title: 'Inactive profiles',
-                        value: '$inactiveCount',
-                        caption: 'Records requiring review or deactivation',
-                        icon: Icons.pause_circle_outline_rounded,
-                        accentColor: const Color(0xFFBF8A2A),
-                        progress: employees.isEmpty
-                            ? 0
-                            : inactiveCount / employees.length,
-                        trend:
-                            '${employees.isEmpty ? 0 : ((inactiveCount / employees.length) * 100).round()}%',
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
                   if (employees.isEmpty)
                     const AppEmptyState(
                       icon: Icons.people_outline_rounded,
@@ -158,38 +102,11 @@ class _EmployeeListScreenState extends ConsumerState<EmployeeListScreen> {
                               OutlinedButton.icon(
                                 onPressed: () => setState(() {
                                   _searchController.clear();
-                                  _statusFilter = 'All';
                                 }),
                                 icon: const Icon(Icons.restart_alt_rounded),
                                 label: const Text('Reset'),
                               ),
                             ],
-                          ),
-                          const SizedBox(height: 16),
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: Wrap(
-                              children: [
-                                AppFilterPill(
-                                  label: 'All',
-                                  selected: _statusFilter == 'All',
-                                  onTap: () =>
-                                      setState(() => _statusFilter = 'All'),
-                                ),
-                                AppFilterPill(
-                                  label: 'Active',
-                                  selected: _statusFilter == 'Active',
-                                  onTap: () =>
-                                      setState(() => _statusFilter = 'Active'),
-                                ),
-                                AppFilterPill(
-                                  label: 'Inactive',
-                                  selected: _statusFilter == 'Inactive',
-                                  onTap: () => setState(
-                                      () => _statusFilter = 'Inactive'),
-                                ),
-                              ],
-                            ),
                           ),
                         ],
                       ),
@@ -232,11 +149,14 @@ class _EmployeeListScreenState extends ConsumerState<EmployeeListScreen> {
                                   columns: <GridColumn>[
                                     _EmployeeColumn(name: 'id', title: 'Employee ID'),
                                     _EmployeeColumn(
-                                        name: 'name', title: 'Employee'),
+                                      name: 'name',
+                                      title: 'Employee',
+                                      padding: const EdgeInsets.only(left: 70, right: 18),
+                                    ),
                                     _EmployeeColumn(
                                       name: 'hourlyRate',
                                       title: 'Hourly Rate',
-                                      alignment: Alignment.centerRight,
+                                      alignment: Alignment.centerLeft,
                                     ),
                                     _EmployeeColumn(
                                       name: 'active',
@@ -281,11 +201,12 @@ class _EmployeeColumn extends GridColumn {
     required String name,
     required String title,
     Alignment alignment = Alignment.centerLeft,
+    EdgeInsets padding = const EdgeInsets.symmetric(horizontal: 18),
   }) : super(
           columnName: name,
           label: Container(
             alignment: alignment,
-            padding: const EdgeInsets.symmetric(horizontal: 18),
+            padding: padding,
             decoration: const BoxDecoration(
               color: Color(0xFFF5EEDF),
             ),
@@ -436,6 +357,13 @@ void _showEditEmployeeDialog(
               ElevatedButton.icon(
                 onPressed: () async {
                   try {
+                    // Update hourly rate
+                    final rate = double.tryParse(hourlyRateCtrl.text) ?? 0.0;
+                    await ref
+                        .read(employeeRepositoryProvider)
+                        .updateHourlyRate(employee.id, rate);
+
+                    // Update schedule
                     final newSchedule = WorkSchedule(
                       id: currentSchedule?.id,
                       employeeId: employee.id,
@@ -451,7 +379,7 @@ void _showEditEmployeeDialog(
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('Employee updated successfully'),
+                          content: Text('Employee settings updated successfully'),
                         ),
                       );
                       Navigator.of(context).pop();

@@ -6,6 +6,7 @@ import 'package:syncfusion_flutter_datagrid/datagrid.dart';
 
 import '../../models/payroll_record.dart';
 import '../../repositories/payroll_repository.dart';
+import '../../repositories/employee_repository.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/app_ui.dart';
 import '../../widgets/responsive_layout.dart';
@@ -130,9 +131,7 @@ class _PayrollScreenState extends ConsumerState<PayrollScreen> {
                     mainAxisSpacing: 18,
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    childAspectRatio: ResponsiveLayout.isMobile(context)
-                        ? 1.12
-                        : (ResponsiveLayout.isTablet(context) ? 1.0 : 0.92),
+                    childAspectRatio: ResponsiveLayout.isMobile(context) ? 2.5 : 1.8,
                     children: [
                       AppMetricCard(
                         title: 'Monthly gross',
@@ -304,7 +303,10 @@ class _PayrollScreenState extends ConsumerState<PayrollScreen> {
                                       title: 'Net pay',
                                     ),
                                     _PayrollColumn(
-                                        name: 'status', title: 'Status'),
+                                      name: 'status',
+                                      title: 'Status',
+                                      alignment: Alignment.center,
+                                    ),
                                   ],
                                 ),
                               ),
@@ -342,10 +344,11 @@ class _PayrollColumn extends GridColumn {
   _PayrollColumn({
     required String name,
     required String title,
+    Alignment alignment = Alignment.centerLeft,
   }) : super(
           columnName: name,
           label: Container(
-            alignment: Alignment.centerLeft,
+            alignment: alignment,
             padding: const EdgeInsets.symmetric(horizontal: 18),
             decoration: const BoxDecoration(color: Color(0xFFF5EEDF)),
             child: Text(
@@ -400,13 +403,19 @@ class _PayrollStatusCard extends StatelessWidget {
   }
 }
 
-class _TopPayrollChart extends StatelessWidget {
+class _TopPayrollChart extends ConsumerWidget {
   final List<PayrollRecord> records;
 
   const _TopPayrollChart({required this.records});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final employeesAsync = ref.watch(employeesProvider);
+    final employees = employeesAsync.value ?? [];
+    final employeeLookup = {
+      for (final e in employees) e.id: e,
+    };
+
     final top = [...records]..sort((a, b) => b.netPay.compareTo(a.netPay));
     final series = top.take(5).toList();
 
@@ -429,14 +438,14 @@ class _TopPayrollChart extends StatelessWidget {
             Expanded(
               child: BarChart(
                 BarChartData(
-                  alignment: BarChartAlignment.spaceBetween,
+                  alignment: BarChartAlignment.spaceAround,
                   maxY: series
                           .map((record) => record.netPay)
                           .reduce((a, b) => a > b ? a : b) +
                       100,
                   minY: 0,
                   gridData: FlGridData(
-                    drawVerticalLine: false,
+                     drawVerticalLine: false,
                     getDrawingHorizontalLine: (_) => const FlLine(
                       color: AppTheme.mist,
                       strokeWidth: 1,
@@ -456,15 +465,20 @@ class _TopPayrollChart extends StatelessWidget {
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
+                        reservedSize: 32,
                         getTitlesWidget: (value, meta) {
                           final index = value.toInt();
                           if (index < 0 || index >= series.length) {
                             return const SizedBox.shrink();
                           }
+                          final empId = series[index].employeeId;
+                          final name = employeeLookup[empId]?.name ?? 'E$empId';
+                          final displayName = name.split(' ').first;
+
                           return Padding(
                             padding: const EdgeInsets.only(top: 8),
                             child: Text(
-                              'E${series[index].employeeId}',
+                              displayName,
                               style: const TextStyle(
                                 color: AppTheme.mutedText,
                                 fontWeight: FontWeight.w600,

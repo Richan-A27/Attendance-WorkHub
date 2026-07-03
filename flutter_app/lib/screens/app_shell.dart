@@ -108,15 +108,15 @@ class AppShell extends ConsumerWidget {
               backgroundColor: AppTheme.softWhite,
               indicatorColor: AppTheme.sage,
               extended: false,
-              minWidth: 92,
+              minWidth: 84,
               labelType: NavigationRailLabelType.selected,
               leading: Padding(
-                padding: const EdgeInsets.only(top: 20),
+                padding: const EdgeInsets.only(top: 16),
                 child: Container(
-                  width: 56,
-                  height: 56,
+                  width: 48,
+                  height: 48,
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(16),
                     gradient: const LinearGradient(
                       colors: [AppTheme.primaryGreen, AppTheme.emerald],
                     ),
@@ -155,8 +155,8 @@ class AppShell extends ConsumerWidget {
         body: Row(
           children: [
             Container(
-              width: 316,
-              padding: const EdgeInsets.fromLTRB(22, 22, 22, 18),
+              width: 272,
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
                   colors: [AppTheme.darkGreenSidebar, Color(0xFF193728)],
@@ -174,14 +174,14 @@ class AppShell extends ConsumerWidget {
                         Colors.white.withValues(alpha: 0.04),
                       ],
                     ),
-                    padding: const EdgeInsets.all(18),
+                    padding: const EdgeInsets.all(14),
                     child: Row(
                       children: [
                         Container(
-                          width: 54,
-                          height: 54,
+                          width: 44,
+                          height: 44,
                           decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(18),
+                            borderRadius: BorderRadius.circular(14),
                             gradient: const LinearGradient(
                               colors: [AppTheme.accentGold, Color(0xFFE7C766)],
                             ),
@@ -200,16 +200,16 @@ class AppShell extends ConsumerWidget {
                                 'ISRAVEL WorkHub',
                                 style: TextStyle(
                                   color: Colors.white,
-                                  fontSize: 18,
+                                  fontSize: 16,
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
-                              SizedBox(height: 4),
+                              SizedBox(height: 2),
                               Text(
-                                'Enterprise workforce intelligence',
+                                'Workforce operations',
                                 style: TextStyle(
                                   color: Color(0xFFD4E1D7),
-                                  fontSize: 12,
+                                  fontSize: 11,
                                 ),
                               ),
                             ],
@@ -218,23 +218,21 @@ class AppShell extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 24),
-                  const _SidebarMetaCard(),
-                  const SizedBox(height: 28),
+                  const SizedBox(height: 20),
                   Expanded(
                     child: ListView(
                       padding: EdgeInsets.zero,
                       children: [
                         for (final group in _groupNames) ...[
                           Padding(
-                            padding: const EdgeInsets.fromLTRB(8, 0, 8, 10),
+                            padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
                             child: Text(
                               group.toUpperCase(),
                               style: const TextStyle(
                                 color: Color(0xFF9BB4A5),
-                                fontSize: 11,
+                                fontSize: 10,
                                 fontWeight: FontWeight.w700,
-                                letterSpacing: 1.5,
+                                letterSpacing: 1.3,
                               ),
                             ),
                           ),
@@ -246,7 +244,7 @@ class AppShell extends ConsumerWidget {
                                   onTap: () => context.go(item.route),
                                 ),
                               ),
-                          const SizedBox(height: 14),
+                          const SizedBox(height: 10),
                         ],
                       ],
                     ),
@@ -342,48 +340,6 @@ class _NavItem {
   });
 }
 
-class _SidebarMetaCard extends StatelessWidget {
-  const _SidebarMetaCard();
-
-  @override
-  Widget build(BuildContext context) {
-    return const AppSurfaceCard(
-      gradient: LinearGradient(
-        colors: [Color(0xFF2D5942), Color(0xFF244736)],
-      ),
-      padding: EdgeInsets.all(18),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Today\'s pulse',
-            style: TextStyle(
-              color: Color(0xFFD8E6DB),
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          SizedBox(height: 10),
-          Text(
-            'Operations look healthy across attendance, payroll, and sync reliability.',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 15,
-              height: 1.45,
-            ),
-          ),
-          SizedBox(height: 16),
-          AppStatusBadge(
-            label: 'Enterprise view active',
-            color: AppTheme.accentGold,
-            icon: Icons.auto_graph_rounded,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _SidebarItem extends StatefulWidget {
   final _NavItem item;
   final bool isSelected;
@@ -411,9 +367,9 @@ class _SidebarItemState extends State<_SidebarItem> {
       onExit: (_) => setState(() => _hovered = false),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
-        margin: const EdgeInsets.only(bottom: 10),
+        margin: const EdgeInsets.only(bottom: 8),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(18),
           gradient: isActive
               ? const LinearGradient(
                   colors: [AppTheme.primaryGreen, AppTheme.emerald],
@@ -431,17 +387,17 @@ class _SidebarItemState extends State<_SidebarItem> {
         child: Material(
           color: Colors.transparent,
           child: InkWell(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(18),
             onTap: widget.onTap,
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
               child: Row(
                 children: [
                   Container(
-                    width: 42,
-                    height: 42,
+                    width: 38,
+                    height: 38,
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(12),
                       color: isActive
                           ? Colors.white.withValues(alpha: 0.14)
                           : Colors.white.withValues(alpha: 0.05),
@@ -460,13 +416,9 @@ class _SidebarItemState extends State<_SidebarItem> {
                             isActive ? Colors.white : const Color(0xFFE4EFE7),
                         fontWeight:
                             isActive ? FontWeight.w700 : FontWeight.w500,
-                        fontSize: 14,
+                        fontSize: 13,
                       ),
                     ),
-                  ),
-                  Icon(
-                    Icons.chevron_right_rounded,
-                    color: isActive ? Colors.white : Colors.white38,
                   ),
                 ],
               ),

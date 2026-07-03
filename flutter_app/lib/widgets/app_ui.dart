@@ -57,7 +57,7 @@ class AppView extends StatelessWidget {
           SafeArea(
             child: Padding(
               padding: padding ??
-                  EdgeInsets.fromLTRB(horizontal, 24, horizontal, 24),
+                  EdgeInsets.fromLTRB(horizontal, 18, horizontal, 20),
               child: child,
             ),
           ),
@@ -83,40 +83,43 @@ class AppPageHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isWide = !ResponsiveLayout.isMobile(context);
+    final isMobile = ResponsiveLayout.isMobile(context);
+    final isShort = ResponsiveLayout.isShortHeight(context);
 
     return Wrap(
-      runSpacing: 16,
+      runSpacing: 12,
       alignment: WrapAlignment.spaceBetween,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         ConstrainedBox(
           constraints: BoxConstraints(
-            maxWidth: isWide ? 680 : double.infinity,
+            maxWidth: isMobile ? double.infinity : 620,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 eyebrow.toUpperCase(),
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
                       color: AppTheme.olive,
                       fontWeight: FontWeight.w700,
-                      letterSpacing: 1.6,
+                      letterSpacing: 1.4,
                     ),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 6),
               Text(
                 title,
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontSize: ResponsiveLayout.isMobile(context) ? 28 : 36,
+                      fontSize: isMobile ? 24 : (isShort ? 28 : 30),
                     ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
               Text(
                 subtitle,
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: AppTheme.mutedText,
+                      fontSize: isMobile ? 13.5 : 14.5,
+                      height: 1.4,
                     ),
               ),
             ],
@@ -190,7 +193,7 @@ class AppSectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Wrap(
-      runSpacing: 12,
+      runSpacing: 8,
       alignment: WrapAlignment.spaceBetween,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
@@ -199,12 +202,16 @@ class AppSectionHeader extends StatelessWidget {
           children: [
             Text(
               title,
-              style: Theme.of(context).textTheme.titleLarge,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontSize: ResponsiveLayout.isMobile(context) ? 18 : 20,
+                  ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
             Text(
               subtitle,
-              style: Theme.of(context).textTheme.bodyMedium,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontSize: 13,
+                  ),
             ),
           ],
         ),
@@ -284,6 +291,7 @@ class AppMetricCard extends StatelessWidget {
             constraints.maxHeight < 245 || constraints.maxWidth < 245;
         final ultraCompact =
             constraints.maxHeight < 215 || constraints.maxWidth < 215;
+        final showCaption = constraints.maxHeight >= 165;
 
         return AppSurfaceCard(
           gradient: LinearGradient(
@@ -294,7 +302,7 @@ class AppMetricCard extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
-          padding: EdgeInsets.all(ultraCompact ? 18 : 24),
+          padding: EdgeInsets.all(ultraCompact ? 14 : 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -302,17 +310,17 @@ class AppMetricCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    width: ultraCompact ? 40 : 48,
-                    height: ultraCompact ? 40 : 48,
+                    width: ultraCompact ? 36 : 48,
+                    height: ultraCompact ? 36 : 48,
                     decoration: BoxDecoration(
                       color: accentColor.withValues(alpha: 0.12),
                       borderRadius:
-                          BorderRadius.circular(ultraCompact ? 14 : 16),
+                          BorderRadius.circular(ultraCompact ? 12 : 16),
                     ),
                     child: Icon(
                       icon,
                       color: accentColor,
-                      size: ultraCompact ? 20 : 24,
+                      size: ultraCompact ? 18 : 24,
                     ),
                   ),
                   const Spacer(),
@@ -321,7 +329,7 @@ class AppMetricCard extends StatelessWidget {
                       child: Container(
                         padding: EdgeInsets.symmetric(
                           horizontal: ultraCompact ? 10 : 12,
-                          vertical: ultraCompact ? 6 : 8,
+                          vertical: ultraCompact ? 4 : 8,
                         ),
                         decoration: BoxDecoration(
                           color: accentColor.withValues(alpha: 0.12),
@@ -335,47 +343,49 @@ class AppMetricCard extends StatelessWidget {
                           style: TextStyle(
                             color: accentColor,
                             fontWeight: FontWeight.w700,
-                            fontSize: ultraCompact ? 11 : 12,
+                            fontSize: ultraCompact ? 10 : 12,
                           ),
                         ),
                       ),
                     ),
                 ],
               ),
-              SizedBox(height: ultraCompact ? 12 : 18),
+              const Spacer(),
               Text(
                 value,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontSize: ultraCompact ? 24 : 30,
+                      fontSize: ultraCompact ? 22 : 30,
                     ),
               ),
-              SizedBox(height: compact ? 6 : 8),
+              const SizedBox(height: 4),
               Text(
                 title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontSize: ultraCompact ? 15 : null,
+                      fontSize: ultraCompact ? 13 : null,
                     ),
               ),
-              SizedBox(height: compact ? 6 : 8),
-              Flexible(
-                child: Text(
-                  caption,
-                  maxLines: ultraCompact ? 2 : 3,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontSize: ultraCompact ? 12 : null,
-                      ),
+              if (showCaption) ...[
+                const SizedBox(height: 4),
+                Flexible(
+                  child: Text(
+                    caption,
+                    maxLines: ultraCompact ? 2 : 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontSize: ultraCompact ? 11 : null,
+                        ),
+                  ),
                 ),
-              ),
-              SizedBox(height: compact ? 12 : 18),
+              ],
+              const Spacer(),
               ClipRRect(
                 borderRadius: BorderRadius.circular(999),
                 child: LinearProgressIndicator(
-                  minHeight: ultraCompact ? 6 : 8,
+                  minHeight: ultraCompact ? 5 : 8,
                   value: progress.clamp(0.0, 1.0),
                   backgroundColor: accentColor.withValues(alpha: 0.08),
                   valueColor: AlwaysStoppedAnimation<Color>(accentColor),
@@ -585,27 +595,30 @@ class AppInfoTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: Container(
-        width: 48,
-        height: 48,
-        decoration: BoxDecoration(
-          color: accentColor.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(16),
+    return Material(
+      color: Colors.transparent,
+      child: ListTile(
+        contentPadding: EdgeInsets.zero,
+        leading: Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            color: accentColor.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Icon(icon, color: accentColor),
         ),
-        child: Icon(icon, color: accentColor),
+        title: Text(
+          title,
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Text(subtitle, style: Theme.of(context).textTheme.bodyMedium),
+        ),
+        trailing: trailing ?? const Icon(Icons.chevron_right_rounded),
+        onTap: onTap,
       ),
-      title: Text(
-        title,
-        style: Theme.of(context).textTheme.titleMedium,
-      ),
-      subtitle: Padding(
-        padding: const EdgeInsets.only(top: 4),
-        child: Text(subtitle, style: Theme.of(context).textTheme.bodyMedium),
-      ),
-      trailing: trailing ?? const Icon(Icons.chevron_right_rounded),
-      onTap: onTap,
     );
   }
 }

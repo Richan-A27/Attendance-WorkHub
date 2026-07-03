@@ -45,3 +45,8 @@ flutter_app/.packages
 
 # Mac
 .DS_Store
+
+# Python
+__pycache__/
+*.pyc
+

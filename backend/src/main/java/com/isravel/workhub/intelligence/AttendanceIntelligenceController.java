@@ -18,6 +18,7 @@ public class AttendanceIntelligenceController {
     private final DailyAttendanceProcessor dailyAttendanceProcessor;
     private final AttendanceSessionRepository sessionRepository;
     private final DailyAttendanceRepository dailyAttendanceRepository;
+    private final AttendanceBreakRepository attendanceBreakRepository;
 
     @PostMapping("/sessions/process/{employeeId}/{date}")
     @RequireRole({"ADMIN", "MANAGER"})
@@ -84,6 +85,16 @@ public class AttendanceIntelligenceController {
         return ResponseEntity.ok(attendance);
     }
 
+    @GetMapping("/daily/range")
+    @RequireRole({"ADMIN", "MANAGER"})
+    public ResponseEntity<List<DailyAttendance>> getDailyAttendanceRangeAll(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        List<DailyAttendance> attendance = dailyAttendanceRepository
+                .findByAttendanceDateBetweenOrderByAttendanceDate(startDate, endDate);
+        return ResponseEntity.ok(attendance);
+    }
+
     @GetMapping("/sessions/{employeeId}/{date}")
     @RequireRole({"ADMIN", "MANAGER"})
     public ResponseEntity<List<AttendanceSession>> getAttendanceSessions(
@@ -91,5 +102,15 @@ public class AttendanceIntelligenceController {
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         List<AttendanceSession> sessions = sessionRepository.findByEmployeeIdAndSessionDate(employeeId, date);
         return ResponseEntity.ok(sessions);
+    }
+
+    @GetMapping("/breaks/{employeeId}/{date}")
+    @RequireRole({"ADMIN", "MANAGER"})
+    public ResponseEntity<List<AttendanceBreak>> getAttendanceBreaks(
+            @PathVariable Long employeeId,
+            @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        List<AttendanceBreak> breaks = attendanceBreakRepository
+                .findByEmployeeIdAndAttendanceDateOrderByBreakNumberAsc(employeeId, date);
+        return ResponseEntity.ok(breaks);
     }
 }

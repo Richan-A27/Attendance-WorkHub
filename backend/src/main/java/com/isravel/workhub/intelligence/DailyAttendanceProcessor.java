@@ -30,6 +30,8 @@ public class DailyAttendanceProcessor {
     private final WorkScheduleRepository workScheduleRepository;
     private final HolidayRepository holidayRepository;
     private final EmployeeRepository employeeRepository;
+    private final AttendanceBreakRepository attendanceBreakRepository;
+    private final com.isravel.workhub.settings.CompanyProfileRepository companyProfileRepository;
 
     @Transactional
     public DailyAttendance processDailyAttendance(Long employeeId, LocalDate date) {
@@ -55,9 +57,20 @@ public class DailyAttendanceProcessor {
         List<AttendanceSession> sessions = sessionRepository
                 .findByEmployeeIdAndSessionDate(employeeId, date);
         
-        // Get raw punches
-        LocalDateTime startOfDay = date.atStartOfDay();
-        LocalDateTime endOfDay = date.atTime(LocalTime.MAX);
+        // Get breaks
+        List<AttendanceBreak> breaks = attendanceBreakRepository
+                .findByEmployeeIdAndAttendanceDateOrderByBreakNumberAsc(employeeId, date);
+        
+        // Get raw punches (shifted by day boundary)
+        LocalTime dayBoundary = companyProfileRepository.findAll().stream().findFirst()
+                .map(com.isravel.workhub.settings.CompanyProfile::getDayBoundary)
+                .orElse(LocalTime.of(6, 0));
+        if (dayBoundary == null) {
+            dayBoundary = LocalTime.of(6, 0);
+        }
+
+        LocalDateTime startOfDay = date.atTime(dayBoundary);
+        LocalDateTime endOfDay = date.plusDays(1).atTime(dayBoundary).minusNanos(1);
         
         Employee employee = employeeRepository.findById(employeeId).orElse(null);
         if (employee == null) {
@@ -84,10 +97,14 @@ public class DailyAttendanceProcessor {
             dailyAttendance.setFirstPunch(null);
             dailyAttendance.setLastPunch(null);
             dailyAttendance.setTotalWorkingMinutes(0);
+            dailyAttendance.setWorkingMinutes(0);
+            dailyAttendance.setBreakMinutes(0);
+            dailyAttendance.setBreakDurationMinutes(0);
+            dailyAttendance.setTotalMinutes(0);
             dailyAttendance.setOvertimeMinutes(0);
         } else {
             // Process punches
-            processPunches(dailyAttendance, punches, sessions, schedule);
+            processPunches(dailyAttendance, punches, sessions, breaks, schedule);
         }
         
         // Calculate scheduled work minutes
@@ -109,25 +126,42 @@ public class DailyAttendanceProcessor {
     }
 
     private void processPunches(DailyAttendance dailyAttendance, List<AttendanceLog> punches, 
-                               List<AttendanceSession> sessions, WorkSchedule schedule) {
-        // Set first and last punch
-        dailyAttendance.setFirstPunch(punches.get(0).getPunchTime());
-        dailyAttendance.setLastPunch(punches.get(punches.size() - 1).getPunchTime());
+                               List<AttendanceSession> sessions, List<AttendanceBreak> breaks, WorkSchedule schedule) {
+        if (sessions.isEmpty()) return;
         
-        // Calculate total working minutes from sessions (excluding lunch)
-        int totalWorkMinutes = 0;
-        int totalLunchMinutes = 0;
+        // Set first and last punch from sessions (first starts session, last ends it)
+        dailyAttendance.setFirstPunch(sessions.get(0).getPunchIn());
         
-        for (AttendanceSession session : sessions) {
-            if (!session.getIsLunchBreak() && session.getDurationMinutes() != null) {
-                totalWorkMinutes += session.getDurationMinutes();
-            } else if (session.getIsLunchBreak() && session.getDurationMinutes() != null) {
-                totalLunchMinutes += session.getDurationMinutes();
+        AttendanceSession lastSession = sessions.get(sessions.size() - 1);
+        dailyAttendance.setLastPunch(lastSession.getPunchOut());
+        
+        // Calculate durations
+        int totalWorking = 0;
+        for (AttendanceSession s : sessions) {
+            if (s.getDurationMinutes() != null) {
+                totalWorking += s.getDurationMinutes();
             }
         }
         
-        dailyAttendance.setTotalWorkingMinutes(totalWorkMinutes);
-        dailyAttendance.setLunchDurationMinutes(totalLunchMinutes);
+        int totalBreak = 0;
+        for (AttendanceBreak b : breaks) {
+            if (b.getDurationMinutes() != null) {
+                totalBreak += b.getDurationMinutes();
+            }
+        }
+        
+        dailyAttendance.setWorkingMinutes(totalWorking);
+        dailyAttendance.setTotalWorkingMinutes(totalWorking); // for compatibility
+        
+        dailyAttendance.setBreakMinutes(totalBreak);
+        dailyAttendance.setBreakDurationMinutes(totalBreak); // for compatibility
+        
+        if (dailyAttendance.getFirstPunch() != null && dailyAttendance.getLastPunch() != null) {
+            int totalMin = (int) java.time.Duration.between(dailyAttendance.getFirstPunch(), dailyAttendance.getLastPunch()).toMinutes();
+            dailyAttendance.setTotalMinutes(totalMin);
+        } else {
+            dailyAttendance.setTotalMinutes(0);
+        }
         
         // Detect late arrival
         if (schedule != null && dailyAttendance.getFirstPunch() != null) {
@@ -137,6 +171,9 @@ public class DailyAttendanceProcessor {
         // Detect early departure
         if (schedule != null && dailyAttendance.getLastPunch() != null) {
             detectEarlyDeparture(dailyAttendance, schedule);
+        } else {
+            dailyAttendance.setIsEarlyDeparture(false);
+            dailyAttendance.setEarlyDepartureMinutes(0);
         }
     }
 
@@ -189,6 +226,12 @@ public class DailyAttendanceProcessor {
             return;
         }
         
+        // If checkout is missing (incomplete punches)
+        if (dailyAttendance.getLastPunch() == null) {
+            dailyAttendance.setStatus("INCOMPLETE");
+            return;
+        }
+        
         // Check for half day (less than 50% of scheduled hours)
         if (schedule != null && dailyAttendance.getScheduledWorkMinutes() != null) {
             double workRatio = (double) dailyAttendance.getTotalWorkingMinutes() / dailyAttendance.getScheduledWorkMinutes();
@@ -199,7 +242,7 @@ public class DailyAttendanceProcessor {
         }
         
         // Check if late
-        if (dailyAttendance.getIsLate()) {
+        if (dailyAttendance.getIsLate() != null && dailyAttendance.getIsLate()) {
             dailyAttendance.setStatus("LATE");
             return;
         }
@@ -219,6 +262,10 @@ public class DailyAttendanceProcessor {
         dailyAttendance.setFirstPunch(null);
         dailyAttendance.setLastPunch(null);
         dailyAttendance.setTotalWorkingMinutes(0);
+        dailyAttendance.setWorkingMinutes(0);
+        dailyAttendance.setBreakMinutes(0);
+        dailyAttendance.setBreakDurationMinutes(0);
+        dailyAttendance.setTotalMinutes(0);
         dailyAttendance.setOvertimeMinutes(0);
         
         return dailyAttendanceRepository.save(dailyAttendance);
@@ -235,6 +282,10 @@ public class DailyAttendanceProcessor {
         dailyAttendance.setFirstPunch(null);
         dailyAttendance.setLastPunch(null);
         dailyAttendance.setTotalWorkingMinutes(0);
+        dailyAttendance.setWorkingMinutes(0);
+        dailyAttendance.setBreakMinutes(0);
+        dailyAttendance.setBreakDurationMinutes(0);
+        dailyAttendance.setTotalMinutes(0);
         dailyAttendance.setOvertimeMinutes(0);
         
         return dailyAttendanceRepository.save(dailyAttendance);

@@ -1,0 +1,1 @@
+ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS day_boundary TIME DEFAULT '06:00:00';

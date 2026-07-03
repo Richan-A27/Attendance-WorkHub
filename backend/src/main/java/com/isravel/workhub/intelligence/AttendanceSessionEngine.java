@@ -27,14 +27,24 @@ public class AttendanceSessionEngine {
     private final AttendanceLogRepository attendanceLogRepository;
     private final WorkScheduleRepository workScheduleRepository;
     private final EmployeeRepository employeeRepository;
+    private final AttendanceBreakRepository attendanceBreakRepository;
+    private final com.isravel.workhub.settings.CompanyProfileRepository companyProfileRepository;
 
     @Transactional
     public List<AttendanceSession> processAttendanceSessions(Long employeeId, LocalDate date) {
         log.info("Processing attendance sessions for employee {} on date {}", employeeId, date);
         
-        // Get all punches for the employee on this date
-        LocalDateTime startOfDay = date.atStartOfDay();
-        LocalDateTime endOfDay = date.atTime(LocalTime.MAX);
+        // Load day boundary
+        LocalTime dayBoundary = companyProfileRepository.findAll().stream().findFirst()
+                .map(com.isravel.workhub.settings.CompanyProfile::getDayBoundary)
+                .orElse(LocalTime.of(6, 0));
+        if (dayBoundary == null) {
+            dayBoundary = LocalTime.of(6, 0);
+        }
+
+        // Get all punches for the employee on this date (shifted by day boundary)
+        LocalDateTime startOfDay = date.atTime(dayBoundary);
+        LocalDateTime endOfDay = date.plusDays(1).atTime(dayBoundary).minusNanos(1);
         
         List<AttendanceLog> punches = attendanceLogRepository
                 .findByEmployeeIdAndPunchTimeBetweenOrderByPunchTimeAsc(
@@ -58,13 +68,34 @@ public class AttendanceSessionEngine {
         // Convert punches to sessions
         List<AttendanceSession> sessions = createSessionsFromPunches(employeeId, date, punches, lunchDurationMinutes);
         
-        // Delete existing sessions for this employee/date
+        // Delete existing sessions and breaks for this employee/date
         sessionRepository.deleteByEmployeeIdAndSessionDate(employeeId, date);
+        attendanceBreakRepository.deleteByEmployeeIdAndAttendanceDate(employeeId, date);
         
         // Save new sessions
         List<AttendanceSession> savedSessions = sessionRepository.saveAll(sessions);
         
-        log.info("Created {} attendance sessions for employee {} on date {}", savedSessions.size(), employeeId, date);
+        // Create breaks from sessions (gaps between working sessions)
+        List<AttendanceBreak> breaks = new ArrayList<>();
+        for (int i = 0; i < savedSessions.size() - 1; i++) {
+            AttendanceSession current = savedSessions.get(i);
+            AttendanceSession next = savedSessions.get(i + 1);
+            if (current.getPunchOut() != null && next.getPunchIn() != null) {
+                AttendanceBreak b = new AttendanceBreak();
+                b.setEmployeeId(employeeId);
+                b.setAttendanceDate(date);
+                b.setBreakNumber(i + 1);
+                b.setBreakStart(current.getPunchOut());
+                b.setBreakEnd(next.getPunchIn());
+                b.setDurationMinutes((int) java.time.Duration.between(current.getPunchOut(), next.getPunchIn()).toMinutes());
+                breaks.add(b);
+            }
+        }
+        if (!breaks.isEmpty()) {
+            attendanceBreakRepository.saveAll(breaks);
+        }
+        
+        log.info("Created {} attendance sessions and {} breaks for employee {} on date {}", savedSessions.size(), breaks.size(), employeeId, date);
         
         return savedSessions;
     }
@@ -90,7 +121,7 @@ public class AttendanceSessionEngine {
                 long durationMinutes = java.time.Duration.between(punchIn.getPunchTime(), punchOut.getPunchTime()).toMinutes();
                 session.setDurationMinutes((int) durationMinutes);
                 
-                // Check if this is a lunch break
+                // Check if this is a lunch break (keeping for compatibility, but breaks are now gap-based)
                 if (isLunchBreak(punchIn.getPunchTime(), punchOut.getPunchTime(), lunchDurationMinutes)) {
                     session.setIsLunchBreak(true);
                 }
@@ -124,9 +155,17 @@ public class AttendanceSessionEngine {
     public void processAllAttendanceForDate(LocalDate date) {
         log.info("Processing attendance sessions for all employees on date {}", date);
         
-        // Get all employees who have punches on this date
-        LocalDateTime startOfDay = date.atStartOfDay();
-        LocalDateTime endOfDay = date.atTime(LocalTime.MAX);
+        // Load day boundary
+        LocalTime dayBoundary = companyProfileRepository.findAll().stream().findFirst()
+                .map(com.isravel.workhub.settings.CompanyProfile::getDayBoundary)
+                .orElse(LocalTime.of(6, 0));
+        if (dayBoundary == null) {
+            dayBoundary = LocalTime.of(6, 0);
+        }
+
+        // Get all employees who have punches on this date (using shifted boundary)
+        LocalDateTime startOfDay = date.atTime(dayBoundary);
+        LocalDateTime endOfDay = date.plusDays(1).atTime(dayBoundary).minusNanos(1);
         
         List<Long> employeeIds = attendanceLogRepository.findDistinctEmployeeIdsByPunchTimeBetween(startOfDay, endOfDay);
         

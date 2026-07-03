@@ -36,6 +36,15 @@ public class DailyAttendance {
     @Column(name = "lunch_duration_minutes")
     private Integer lunchDurationMinutes = 0;
 
+    @Column(name = "total_minutes")
+    private Integer totalMinutes = 0;
+
+    @Column(name = "working_minutes")
+    private Integer workingMinutes = 0;
+
+    @Column(name = "break_minutes")
+    private Integer breakMinutes = 0;
+
     @Column(name = "status")
     private String status = "ABSENT";
 

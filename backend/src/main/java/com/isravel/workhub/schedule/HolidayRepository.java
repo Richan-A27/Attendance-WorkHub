@@ -14,7 +14,7 @@ public interface HolidayRepository extends JpaRepository<Holiday, Long> {
 
     Optional<Holiday> findByHolidayDate(LocalDate holidayDate);
 
-    @Query("SELECT h FROM Holiday h WHERE h.holidayDate = :date OR (h.isRecurring = true AND EXTRACT(MONTH FROM h.holidayDate) = EXTRACT(MONTH FROM :date) AND EXTRACT(DAY FROM h.holidayDate) = EXTRACT(DAY FROM :date))")
+    @Query("SELECT h FROM Holiday h WHERE h.holidayDate = :date OR (h.isRecurring = true AND EXTRACT(MONTH FROM h.holidayDate) = EXTRACT(MONTH FROM CAST(:date as date)) AND EXTRACT(DAY FROM h.holidayDate) = EXTRACT(DAY FROM CAST(:date as date)))")
     Optional<Holiday> findHolidayForDate(@Param("date") LocalDate date);
 
     List<Holiday> findByHolidayDateBetween(LocalDate startDate, LocalDate endDate);

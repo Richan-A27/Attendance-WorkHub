@@ -1,0 +1,3 @@
+ALTER TABLE daily_attendance ADD COLUMN IF NOT EXISTS total_minutes INTEGER DEFAULT 0;
+ALTER TABLE daily_attendance ADD COLUMN IF NOT EXISTS working_minutes INTEGER DEFAULT 0;
+ALTER TABLE daily_attendance ADD COLUMN IF NOT EXISTS break_minutes INTEGER DEFAULT 0;

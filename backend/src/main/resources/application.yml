@@ -17,7 +17,7 @@ app:
     expiration-ms: ${JWT_EXPIRATION_MS:3600000}
 
 device:
-  ip: ${DEVICE_IP:192.168.1.201}
+  ip: ${DEVICE_IP:192.168.31.11}
   port: ${DEVICE_PORT:4370}
 
 supabase:

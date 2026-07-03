@@ -27,4 +27,8 @@ public class CompanyProfile {
 
     @Column(name = "tax_id")
     private String taxId;
+
+    @Column(name = "day_boundary")
+    private java.time.LocalTime dayBoundary = java.time.LocalTime.of(6, 0);
 }
+

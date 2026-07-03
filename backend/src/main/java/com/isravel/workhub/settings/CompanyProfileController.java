@@ -31,6 +31,7 @@ public class CompanyProfileController {
         existing.setContactEmail(profile.getContactEmail());
         existing.setContactPhone(profile.getContactPhone());
         existing.setTaxId(profile.getTaxId());
+        existing.setDayBoundary(profile.getDayBoundary());
         
         CompanyProfile saved = repository.save(existing);
         return ResponseEntity.ok(saved);
